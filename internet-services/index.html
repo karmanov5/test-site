@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153d36">
+  <meta name="description" content="Сервисы Интернета: интерактивный урок информатики для 11 класса, конспект и тест для самопроверки.">
+  <title>Сервисы Интернета · Информатика, 11 класс</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23153d36'/%3E%3Cpath d='M8 8h7v17H8zm9 0h7v17h-7z' fill='%23f5d96b'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="content.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">К содержанию урока</a>
+  <header class="topbar">
+    <a class="brand" href="#slide-1"><span class="brand-mark">и.</span><span>Кабинет информатики<small>Учимся пользоваться Интернетом</small></span></a>
+    <span class="class-label">11 класс</span>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Навигация по уроку">
+      <div class="side-heading"><span>МАРШРУТ УРОКА</span><button class="menu-toggle" aria-expanded="false" aria-controls="chapters">Разделы ↓</button></div>
+      <nav id="chapters" aria-label="Разделы"></nav>
+      <div class="side-note"><span class="note-dot"></span><p>Блоки «Запиши в тетрадь» — твой конспект урока.</p></div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <div class="lesson-meta"><span id="section-label">Знакомство</span><span id="page-label">01 / 18</span></div>
+      <div class="lesson-progress" aria-hidden="true"><span id="lesson-progress-fill"></span></div>
+      <article id="slide"></article>
+      <section id="quiz" hidden aria-label="Самопроверка"></section>
+      <footer class="slide-footer"><button id="previous" class="button secondary">← Назад</button><span class="keyboard-hint">Листай стрелками ← →</span><button id="next" class="button primary">Далее →</button></footer>
+      <p class="source-line" id="source-line"></p>
+    </main>
+  </div>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+  <noscript>Для навигации по уроку и прохождения теста включите JavaScript в браузере.</noscript>
+</body>
+</html>
