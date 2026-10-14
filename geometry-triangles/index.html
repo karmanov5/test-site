@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Решение треугольников</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #5b5b5b;
+    --line: #9a9a9a;
+    --grid: #e3e8ef;
+    --accent: #1f4e8c;
+    --soft: #f1f5fb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #d9dce1;
+    color: var(--ink);
+    font-family: "PT Sans", "Segoe UI", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- Панель управления (только на экране) ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;
+    padding: 10px 16px;
+    background: #ffffff; border-bottom: 1px solid #c4c8cf;
+    font-size: 14px;
+  }
+  .toolbar button {
+    font: inherit; font-weight: 700;
+    padding: 9px 20px; border: 0; border-radius: 6px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .toolbar button:hover { background: #163a6a; }
+  .toolbar .hint { color: var(--muted); }
+
+  .pages { padding: 24px 16px 48px; overflow-x: auto; }
+  .page {
+    position: relative;
+    margin: 0 auto 24px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    overflow: hidden;
+  }
+
+  /* ---------- Лист ученика: A4 альбомный, 2 копии А5 ---------- */
+  .page.students { width: 297mm; height: 210mm; display: flex; page: students; }
+  .half {
+    width: 148.5mm; height: 210mm;
+    padding: 7mm 8mm 6mm;
+    display: flex; flex-direction: column;
+    font-size: 10pt; line-height: 1.25;
+  }
+  .cut {
+    position: absolute; top: 0; bottom: 0; left: 148.5mm;
+    border-left: 1.2px dashed var(--line);
+  }
+  .cut .scissors {
+    position: absolute; left: -9px; top: 6mm;
+    font-size: 16px; line-height: 1; background: #fff; color: var(--muted);
+    transform: rotate(90deg);
+  }
+  .cut .label {
+    position: absolute; left: -2.2mm; top: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    font-size: 7pt; letter-spacing: .15em; color: var(--muted);
+    background: #fff; padding: 0 2mm; white-space: nowrap;
+  }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm;
+          border-bottom: 1.5px solid var(--accent); padding-bottom: 1.5mm; }
+  .head .subject { font-size: 8.5pt; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .head h1 { margin: 0; font-size: 14pt; color: var(--accent); }
+  .who { display: flex; gap: 3mm; margin: 2mm 0 1.5mm; font-size: 9.5pt; }
+  .who span { flex: 1; border-bottom: 1px solid var(--ink); white-space: nowrap; }
+  .who span.short { flex: 0 0 22mm; }
+
+  .ref {
+    display: flex; gap: 3mm; align-items: stretch;
+    background: var(--soft); border: 1px solid #cdd8e8; border-radius: 2mm;
+    padding: 1.6mm 2.5mm; font-size: 8.5pt; margin-bottom: 1.5mm;
+  }
+  .ref .f { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: .6mm; }
+  .ref b { color: var(--accent); }
+  .ref table { border-collapse: collapse; font-size: 7.5pt; }
+  .ref td, .ref th { border: 1px solid #b9c6da; padding: .3mm 1.1mm; text-align: center; background: #fff; }
+  .ref th { background: #e2eaf6; font-weight: 700; }
+
+  .tasks { flex: 1; display: flex; flex-direction: column; gap: 1.2mm; min-height: 0; }
+  .task { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
+  .task.big { flex: 1.35 1 0; }
+  .task .q { display: flex; gap: 2mm; align-items: flex-start; }
+  .task .num {
+    flex: 0 0 auto; min-width: 6mm; height: 6mm; padding: 0 1mm; border-radius: 1.2mm;
+    background: var(--accent); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 10pt;
+  }
+  .task.big .num { background: #b5442a; }
+  .task .text { flex: 1; }
+  .task .tag { font-size: 7pt; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; margin-right: 1mm; }
+  .task .fig { flex: 0 0 auto; margin-top: -1mm; }
+  .task .pts { font-size: 7.5pt; color: var(--muted); white-space: nowrap; }
+  .work {
+    flex: 1; min-height: 8mm; margin-top: 1mm; position: relative;
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size: 5mm 5mm;
+    border: 1px solid var(--grid);
+  }
+    .answer { font-size: 9.5pt; margin-top: .8mm; display: flex; gap: 2mm; }
+  .answer span { flex: 1; border-bottom: 1px solid var(--ink); }
+  .foot { display: flex; justify-content: space-between; font-size: 8pt; color: var(--muted); margin-top: 1.5mm; }
+  .foot .score span { display: inline-block; width: 12mm; border-bottom: 1px solid var(--ink); }
+
+  /* ---------- Лист учителя: A4 книжный ---------- */
+  .page.teacher {
+    width: 210mm; height: 297mm; page: teacher;
+    padding: 10mm 12mm; font-size: 9.6pt; line-height: 1.33;
+  }
+  .teacher h1 { margin: 0; font-size: 15pt; color: var(--accent); }
+  .teacher .sub { color: var(--muted); font-size: 9pt; margin: .5mm 0 3mm;
+                  border-bottom: 1.5px solid var(--accent); padding-bottom: 2mm; }
+  .teacher h2 { font-size: 10.5pt; margin: 3mm 0 1.2mm; color: var(--accent); }
+  .answers { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; margin-bottom: 1mm; }
+  .answers div { border: 1px solid #cdd8e8; background: var(--soft); border-radius: 1.5mm; padding: 1.5mm 2mm; }
+  .answers b { display: block; color: var(--accent); font-size: 8.5pt; }
+  .sol { border-left: 3px solid var(--accent); padding: .8mm 0 .8mm 3mm; margin-bottom: 2mm; }
+  .sol.big { border-left-color: #b5442a; }
+  .sol .t { font-weight: 700; }
+  .sol .t small { font-weight: 400; color: var(--muted); }
+  .sol p { margin: .6mm 0; }
+  .sol .crit { font-size: 8.8pt; color: #333; background: #fafafa; border: 1px dashed #ccc; padding: 1mm 2mm; margin-top: 1mm; }
+  .formula { font-family: "Cambria Math", "Times New Roman", serif; font-size: 10.5pt; }
+  .grades { border-collapse: collapse; width: 100%; font-size: 9.2pt; }
+  .grades th, .grades td { border: 1px solid #b9c6da; padding: 1mm 2mm; text-align: center; }
+  .grades th { background: #e2eaf6; }
+  .teacher ul { margin: .5mm 0; padding-left: 5mm; }
+  .teacher li { margin: .4mm 0; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: 90%; line-height: 1.1; }
+  .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 .5mm; }
+
+  /* ---------- Печать ---------- */
+  @page students { size: A4 landscape; margin: 0; }
+  @page teacher  { size: A4 portrait;  margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .pages { padding: 0; overflow: visible; }
+    .page { margin: 0; box-shadow: none; break-after: page; }
+    .page:last-child { break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button type="button" onclick="window.print()">🖨 Печать</button>
+  <span class="hint">Стр. 1 — для учеников (A4 альбомный, 2 копии, разрезать по пунктиру) · Стр. 2 — для учителя</span>
+</div>
+
+<div class="pages">
+
+  <!-- ================= ЛИСТ УЧЕНИКА (2 копии) ================= -->
+  <section class="page students" id="students">
+    <!-- Копия заполняется скриптом ниже -->
+    <div class="half" id="copy-a">
+      <div class="head">
+        <div>
+          <div class="subject">Геометрия · 9 класс · Рабочий лист</div>
+          <h1>Решение треугольников</h1>
+        </div>
+      </div>
+      <div class="who"><span>Фамилия, имя:</span><span class="short">Класс:</span><span class="short">Дата:</span></div>
+
+      <div class="ref">
+        <div class="f">
+          <div><b>Т. косинусов:</b> a²&nbsp;=&nbsp;b² + c² − 2bc·cos A</div>
+          <div><b>Т. синусов:</b> a / sin A&nbsp;=&nbsp;b / sin B&nbsp;=&nbsp;c / sin C&nbsp;=&nbsp;2R</div>
+          <div><b>Площадь:</b> S&nbsp;=&nbsp;½·a·b·sin C</div>
+        </div>
+        <table>
+          <tr><th></th><th>30°</th><th>45°</th><th>60°</th><th>120°</th></tr>
+          <tr><th>sin</th><td>½</td><td>√2/2</td><td>√3/2</td><td>√3/2</td></tr>
+          <tr><th>cos</th><td>√3/2</td><td>√2/2</td><td>½</td><td>−½</td></tr>
+        </table>
+      </div>
+
+      <div class="tasks">
+        <div class="task">
+          <div class="q"><div class="num">1</div>
+            <div class="text"><span class="tag">Теорема косинусов</span> 
+              В треугольнике ABC известно: BC&nbsp;=&nbsp;5, AC&nbsp;=&nbsp;8, ∠C&nbsp;=&nbsp;60°. Найдите сторону AB.</div>
+            <div class="fig"><svg width="74" height="44" viewBox="0 0 88 52" aria-hidden="true">
+              <polygon points="8,44 80,44 30,8" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+              <path d="M18,44 A10,10 0 0 0 14,36" fill="none" stroke="#1f4e8c" stroke-width="1"/>
+              <text x="2" y="50" font-size="8">C</text><text x="81" y="50" font-size="8">A</text><text x="27" y="7" font-size="8">B</text>
+              <text x="40" y="51" font-size="7">8</text><text x="11" y="25" font-size="7">5</text>
+              <text x="19" y="41" font-size="6" fill="#1f4e8c">60°</text>
+            </svg></div>
+            <div class="pts">2 б.</div></div>
+          <div class="work"></div>
+          <div class="answer">Ответ:<span></span></div>
+        </div>
+
+        <div class="task">
+          <div class="q"><div class="num">2</div>
+            <div class="text"><span class="tag">Теорема синусов</span> 
+              В треугольнике ABC ∠A&nbsp;=&nbsp;30°, ∠B&nbsp;=&nbsp;45°, BC&nbsp;=&nbsp;6. Найдите сторону AC.</div>
+            <div class="pts">2 б.</div></div>
+          <div class="work"></div>
+          <div class="answer">Ответ:<span></span></div>
+        </div>
+
+        <div class="task">
+          <div class="q"><div class="num">3</div>
+            <div class="text"><span class="tag">Площадь треугольника</span> 
+              В треугольнике ABC AB&nbsp;=&nbsp;8, AC&nbsp;=&nbsp;7, ∠A&nbsp;=&nbsp;30°. Найдите площадь треугольника.</div>
+            <div class="fig"><svg width="78" height="41" viewBox="0 0 88 46" aria-hidden="true">
+              <polygon points="6,40 82,40 56,8" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+              <path d="M18,40 A12,12 0 0 0 16.5,34" fill="none" stroke="#1f4e8c" stroke-width="1"/>
+              <text x="0" y="46" font-size="8">A</text><text x="83" y="46" font-size="8">C</text><text x="54" y="7" font-size="8">B</text>
+              <text x="42" y="46" font-size="7">7</text><text x="26" y="21" font-size="7">8</text>
+              <text x="20" y="38" font-size="6" fill="#1f4e8c">30°</text>
+            </svg></div>
+            <div class="pts">2 б.</div></div>
+          <div class="work"></div>
+          <div class="answer">Ответ:<span></span></div>
+        </div>
+
+        <div class="task">
+          <div class="q"><div class="num">4</div>
+            <div class="text"><span class="tag">Теорема косинусов · угол</span> 
+              Стороны треугольника равны 3, 5 и 7. Найдите наибольший угол треугольника. Каков вид треугольника (по углам)?</div>
+            <div class="pts">2 б.</div></div>
+          <div class="work"></div>
+          <div class="answer">Ответ:<span></span></div>
+        </div>
+
+        <div class="task big">
+          <div class="q"><div class="num">5★</div>
+            <div class="text"><span class="tag">Комбинированная задача</span> 
+              В треугольнике ABC AB&nbsp;=&nbsp;6, AC&nbsp;=&nbsp;10, ∠A&nbsp;=&nbsp;120°. Найдите:
+              а)&nbsp;сторону BC; б)&nbsp;площадь треугольника; в)&nbsp;радиус R описанной окружности.</div>
+            <div class="pts">4 б.</div></div>
+          <div class="work"></div>
+          <div class="answer">Ответ: а)<span></span>б)<span></span>в)<span></span></div>
+        </div>
+      </div>
+
+      <div class="foot"><span>Максимум — 12 баллов</span><span class="score">Баллы: <span></span> Оценка: <span></span></span></div>
+    </div>
+
+    <div class="cut" aria-hidden="true"><span class="scissors">✂</span><span class="label">ЛИНИЯ ОТРЕЗА</span></div>
+  </section>
+
+  <!-- ================= ЛИСТ УЧИТЕЛЯ ================= -->
+  <section class="page teacher">
+    <h1>Решения и критерии оценивания</h1>
+    <div class="sub">Геометрия, 9 класс · «Решение треугольников» · лист для учителя</div>
+
+    <h2>Ответы</h2>
+    <div class="answers">
+      <div><b>№ 1</b>AB = 7</div>
+      <div><b>№ 2</b>AC = 6√2 ≈ 8,49</div>
+      <div><b>№ 3</b>S = 14</div>
+      <div><b>№ 4</b>120°, тупоугольный</div>
+      <div><b>№ 5</b>а) 14; б) 15√3; в) 14√3/3</div>
+    </div>
+
+    <h2>Решения</h2>
+
+    <div class="sol">
+      <div class="t">№ 1. Теорема косинусов <small>(2 балла)</small></div>
+      <p class="formula">AB² = BC² + AC² − 2·BC·AC·cos C = 5² + 8² − 2·5·8·½ = 25 + 64 − 40 = 49,&nbsp; AB = 7.</p>
+      <div class="crit"><b>2 б.</b> — верно записана теорема, верные вычисления, ответ 7. <b>1 б.</b> — теорема записана верно, но допущена вычислительная ошибка (или не извлечён корень). <b>0 б.</b> — формула неверна или решения нет.</div>
+    </div>
+
+    <div class="sol">
+      <div class="t">№ 2. Теорема синусов <small>(2 балла)</small></div>
+      <p class="formula">BC / sin A = AC / sin B &nbsp;⇒&nbsp; AC = BC·sin B / sin A = 6·(√2/2) : ½ = 6√2 ≈ 8,49.</p>
+      <div class="crit"><b>2 б.</b> — верно составлена пропорция (сторона BC лежит против ∠A, AC — против ∠B), верный ответ. <b>1 б.</b> — пропорция верна, ошибка в значениях синусов или вычислениях. <b>0 б.</b> — стороны и углы сопоставлены неверно.</div>
+    </div>
+
+    <div class="sol">
+      <div class="t">№ 3. Площадь треугольника <small>(2 балла)</small></div>
+      <p class="formula">S = ½·AB·AC·sin A = ½·8·7·½ = 14.</p>
+      <div class="crit"><b>2 б.</b> — верная формула и ответ 14. <b>1 б.</b> — формула верна, но вместо sin 30° подставлен cos 30° или забыт множитель ½. <b>0 б.</b> — формула неверна.</div>
+    </div>
+
+    <div class="sol">
+      <div class="t">№ 4. Наибольший угол <small>(2 балла)</small></div>
+      <p>Наибольший угол лежит против наибольшей стороны (7). Обозначим его γ:</p>
+      <p class="formula">cos γ = (3² + 5² − 7²) / (2·3·5) = (9 + 25 − 49) / 30 = −15/30 = −½ &nbsp;⇒&nbsp; γ = 120°.</p>
+      <p>Так как cos γ &lt; 0, угол тупой — треугольник <b>тупоугольный</b>.</p>
+      <div class="crit"><b>2 б.</b> — найден cos γ = −½, угол 120°, указан вид треугольника. <b>1 б.</b> — верно найден угол, но не указан вид треугольника, либо cos γ найден верно, а угол определён неверно (например, 60°). <b>0 б.</b> — выбран не тот угол или формула неверна.</div>
+    </div>
+
+    <div class="sol big">
+      <div class="t">№ 5★. Комбинированная задача <small>(4 балла)</small></div>
+      <p><b>а)</b> <span class="formula">BC² = AB² + AC² − 2·AB·AC·cos 120° = 36 + 100 − 2·6·10·(−½) = 136 + 60 = 196,&nbsp; BC = 14.</span></p>
+      <p><b>б)</b> <span class="formula">S = ½·AB·AC·sin 120° = ½·6·10·(√3/2) = 15√3 ≈ 25,98.</span></p>
+      <p><b>в)</b> <span class="formula">BC / sin A = 2R &nbsp;⇒&nbsp; R = 14 / (2·√3/2) = 14/√3 = 14√3/3 ≈ 8,08.</span></p>
+      <div class="crit"><b>а) 2 б.</b> — верно, с учётом cos 120° = −½; <b>1 б.</b> — ошибка в знаке косинуса (получено BC² = 76, BC = 2√19), остальное верно. <b>б) 1 б.</b> — верная площадь (засчитывается и при ошибке в п. а). <b>в) 1 б.</b> — верно найден R (засчитывается, если R верно найден по ошибочному BC из п. а). Ответ 14/√3 без избавления от иррациональности в знаменателе — тоже верный.</div>
+    </div>
+
+    <h2>Шкала перевода баллов в отметку (максимум 12 баллов)</h2>
+    <table class="grades">
+      <tr><th>Баллы</th><td>11–12</td><td>8–10</td><td>5–7</td><td>0–4</td></tr>
+      <tr><th>Отметка</th><td>«5»</td><td>«4»</td><td>«3»</td><td>«2»</td></tr>
+    </table>
+
+    <h2>Типичные ошибки — на что обратить внимание</h2>
+    <ul>
+      <li>Неверный знак при cos тупого угла: cos 120° = −½, поэтому «−2bc·cos A» превращается в «+».</li>
+      <li>Неправильное сопоставление сторон и противолежащих углов в теореме синусов.</li>
+      <li>Путаница sin и cos в формуле площади; потерянный множитель ½.</li>
+      <li>В № 4 выбирают угол не против наибольшей стороны.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+  // Вторая копия листа ученика — точная копия первой (одна правка → обе копии).
+  (function () {
+    var a = document.getElementById('copy-a');
+    var b = a.cloneNode(true);
+    b.id = 'copy-b';
+    a.parentNode.insertBefore(b, a.nextSibling);
+  })();
+</script>
+</body>
+</html>
